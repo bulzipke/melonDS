@@ -147,7 +147,7 @@ void LoadFirmwareFromFile(FILE* f)
     // take a backup
     char firmbkp[1028];
     int fplen = strlen(FirmwarePath);
-    strncpy(&firmbkp[0], FirmwarePath, fplen);
+    memcpy(&firmbkp[0], FirmwarePath, fplen);
     strncpy(&firmbkp[fplen], ".bak", 1028-fplen);
     firmbkp[fplen+4] = '\0';
     f = Platform::OpenLocalFile(firmbkp, "rb");
@@ -195,9 +195,9 @@ void Reset()
     Firmware = NULL;
 
     if (NDS::ConsoleType == 1)
-        strncpy(FirmwarePath, Config::DSiFirmwarePath, 1023);
+        snprintf(FirmwarePath, sizeof(FirmwarePath), "%s", Config::DSiFirmwarePath);
     else
-        strncpy(FirmwarePath, Config::FirmwarePath, 1023);
+	snprintf(FirmwarePath, sizeof(FirmwarePath), "%s", Config::FirmwarePath);
 
     FILE* f = Platform::OpenLocalFile(FirmwarePath, "rb");
     if (!f)
@@ -640,7 +640,7 @@ void Write(u8 val, u32 hold)
                     // 560190 cycles per frame
                     u32 cyclepos = (u32)NDS::GetSysClockCycles(2);
                     u32 samplepos = (cyclepos * MicBufferLen) / 560190;
-                    if (samplepos >= MicBufferLen) samplepos = MicBufferLen-1;
+                    if (samplepos >= (u32)MicBufferLen) samplepos = MicBufferLen-1;
                     s16 sample = MicBuffer[samplepos];
 
                     // make it louder

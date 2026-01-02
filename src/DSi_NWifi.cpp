@@ -749,7 +749,7 @@ void DSi_NWifi::BMI_Command()
 
             for (u32 i = 0; i < len; i++)
             {
-                u8 val = Mailbox[0].Read();
+                //u8 val = Mailbox[0].Read();
 
                 // TODO: do something with it!!
             }
@@ -803,7 +803,7 @@ void DSi_NWifi::BMI_Command()
 
             for (u32 i = 0; i < len; i++)
             {
-                u8 val = Mailbox[0].Read();
+                //u8 val = Mailbox[0].Read();
 
                 // TODO: do something with it!!
                 //fwrite(&val, 1, 1, f);
@@ -820,9 +820,9 @@ void DSi_NWifi::BMI_Command()
 
 void DSi_NWifi::HTC_Command()
 {
-    u16 h0 = MB_Read16(0);
+    //u16 h0 = MB_Read16(0);
     u16 len = MB_Read16(0);
-    u16 h2 = MB_Read16(0);
+    //u16 h2 = MB_Read16(0);
 
     u16 cmd = MB_Read16(0);
 
@@ -1145,9 +1145,9 @@ void DSi_NWifi::WMI_ConnectToNetwork()
     u8 auth11 = Mailbox[0].Read();
     u8 auth = Mailbox[0].Read();
     u8 pCryptoType = Mailbox[0].Read();
-    u8 pCryptoLen = Mailbox[0].Read();
+    //u8 pCryptoLen = Mailbox[0].Read();
     u8 gCryptoType = Mailbox[0].Read();
-    u8 gCryptoLen = Mailbox[0].Read();
+    //u8 gCryptoLen = Mailbox[0].Read();
     u8 ssidLen = Mailbox[0].Read();
 
     char ssid[33] = {0};
@@ -1156,13 +1156,13 @@ void DSi_NWifi::WMI_ConnectToNetwork()
     if (ssidLen <= 32)
         ssid[ssidLen] = '\0';
 
-    u16 channel = MB_Read16(0);
+    //u16 channel = MB_Read16(0);
 
     u8 bssid[6];
     *(u32*)&bssid[0] = MB_Read32(0);
     *(u16*)&bssid[4] = MB_Read16(0);
 
-    u32 flags = MB_Read32(0);
+    //u32 flags = MB_Read32(0);
 
     if ((type != 0x01) ||
         (auth11 != 0x01) ||

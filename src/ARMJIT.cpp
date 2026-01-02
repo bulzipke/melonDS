@@ -45,6 +45,12 @@
 
 
 #include "ARMJIT_x64/ARMJIT_Offsets.h"
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winvalid-offsetof"
+#endif
+
 static_assert(offsetof(ARM, CPSR) == ARM_CPSR_offset, "");
 static_assert(offsetof(ARM, Cycles) == ARM_Cycles_offset, "");
 static_assert(offsetof(ARM, StopExecution) == ARM_StopExecution_offset, "");
@@ -629,7 +635,7 @@ void CompileBlock(ARM* cpu)
     u32 numInstrs = 0;
 
     u32 writeAddrs[Config::JIT_MaxBlockSize];
-    u32 numWriteAddrs = 0, writeAddrsTranslated = 0;
+    u32 numWriteAddrs = 0;
 
     cpu->FillPipeline();
     u32 nextInstr[2] = {cpu->NextInstr[0], cpu->NextInstr[1]};
@@ -638,7 +644,7 @@ void CompileBlock(ARM* cpu)
     JIT_DEBUGPRINT("start block %x %08x (%x)\n", blockAddr, cpu->CPSR, localAddr);
 
     u32 lastSegmentStart = blockAddr;
-    u32 lr;
+    u32 lr = 0;
     bool hasLink = false;
 
     bool hasMemoryInstr = false;
@@ -933,7 +939,7 @@ void CompileBlock(ARM* cpu)
             block->AddressRanges()[j] = addressRanges[j];
         for (u32 j = 0; j < numAddressRanges; j++)
             block->AddressMasks()[j] = addressMasks[j];
-        for (int j = 0; j < numLiterals; j++)
+        for (u32 j = 0; j < numLiterals; j++)
             block->Literals()[j] = literalLoadAddrs[j];
 
         block->StartAddr = blockAddr;
@@ -986,7 +992,6 @@ void InvalidateByAddr(u32 localAddr)
 
     AddressRange* region = CodeMemRegions[localAddr >> 27];
     AddressRange* range = &region[(localAddr & 0x7FFFFFF) / 512];
-    u32 mask = 1 << ((localAddr & 0x1FF) / 16);
 
     range->Code = 0;
     for (int i = 0; i < range->Blocks.Length;)
@@ -1204,3 +1209,7 @@ void JitEnableExecute()
 }
 
 }
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif

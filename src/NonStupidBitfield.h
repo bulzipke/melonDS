@@ -166,22 +166,27 @@ struct NonStupidBitField
     void SetRange(u32 startBit, u32 bitsCount)
     {
         u32 startEntry = startBit >> 6;
-        u64 entriesCount = (((startBit + bitsCount + 0x3F) & ~0x3F) >> 6) - startEntry;
+	if (startEntry >= DataLength)
+	    return;
 
-        if (entriesCount > 1)
-        {
-            Data[startEntry] |= 0xFFFFFFFFFFFFFFFF << (startBit & 0x3F);
-            if ((startBit + bitsCount) & 0x3F)
-                Data[startEntry + entriesCount - 1] |= ~(0xFFFFFFFFFFFFFFFF << ((startBit + bitsCount) & 0x3F));
-            else
-                Data[startEntry + entriesCount - 1] = 0xFFFFFFFFFFFFFFFF;
-            for (u64 i = startEntry + 1; i < startEntry + entriesCount - 1; i++)
-                Data[i] = 0xFFFFFFFFFFFFFFFF;
-        }
-        else
-        {
+        u64 entriesCount = (((startBit + bitsCount + 0x3F) & ~0x3F) >> 6) - startEntry;
+	if (entriesCount <= 1)
+	{
             Data[startEntry] |= ((1ULL << bitsCount) - 1) << (startBit & 0x3F);
-        }
+	    return;
+	}
+
+	u32 endIndex = startEntry + entriesCount - 1;
+	if (endIndex >= DataLength)
+	    return;
+
+	Data[startEntry] |= 0xFFFFFFFFFFFFFFFF << (startBit & 0x3F);
+	if ((startBit + bitsCount) & 0x3F)
+		Data[startEntry + entriesCount - 1] |= ~(0xFFFFFFFFFFFFFFFF << ((startBit + bitsCount) & 0x3F));
+	else
+		Data[startEntry + entriesCount - 1] = 0xFFFFFFFFFFFFFFFF;
+	for (u64 i = startEntry + 1; i < startEntry + entriesCount - 1; i++)
+		Data[i] = 0xFFFFFFFFFFFFFFFF;
     }
 
     NonStupidBitField& operator|=(const NonStupidBitField<Size>& other)

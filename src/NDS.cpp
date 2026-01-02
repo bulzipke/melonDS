@@ -692,7 +692,7 @@ bool DoSavestate_Scheduler(Savestate* file)
 
             if (funcid != 0xFFFFFFFF)
             {
-                for (int j = 0; ; j++)
+                for (u32 j = 0; ; j++)
                 {
                     if (!eventfuncs[j])
                     {
@@ -1407,7 +1407,7 @@ u32 GetPC(u32 cpu)
 
 u64 GetSysClockCycles(int num)
 {
-    u64 ret;
+    u64 ret = 0;
 
     if (num == 0 || num == 2)
     {
@@ -1729,16 +1729,20 @@ void DivDone(u32 param)
             {
                 DivQuotient[0] = (num<0) ? 1:-1;
                 DivQuotient[1] = (num<0) ? -1:0;
-                *(s64*)&DivRemainder[0] = num;
+		s64 snum = (s64)num;
+		memcpy(&DivRemainder[0], &snum, sizeof(s64));
             }
-            else if (num == -0x80000000 && den == -1)
+            else if (num == (s32)-0x80000000 && den == -1)
             {
-                *(s64*)&DivQuotient[0] = 0x80000000;
+                s64 res = 0x80000000LL;
+                memcpy(&DivQuotient[0], &res, sizeof(s64));
             }
             else
             {
-                *(s64*)&DivQuotient[0] = (s64)(num / den);
-                *(s64*)&DivRemainder[0] = (s64)(num % den);
+                s64 quot = (s64)(num / den);
+                s64 rem = (s64)(num % den);
+                memcpy(&DivQuotient[0], &quot, sizeof(s64));
+                memcpy(&DivRemainder[0], &rem, sizeof(s64));
             }
         }
         break;
@@ -1746,44 +1750,58 @@ void DivDone(u32 param)
     case 0x0001:
     case 0x0003:
         {
-            s64 num = *(s64*)&DivNumerator[0];
+            s64 num;
+            memcpy(&num, &DivNumerator[0], sizeof(s64));
             s32 den = (s32)DivDenominator[0];
+
             if (den == 0)
             {
-                *(s64*)&DivQuotient[0] = (num<0) ? 1:-1;
-                *(s64*)&DivRemainder[0] = num;
+                s64 q = (num < 0) ? 1 : -1;
+                memcpy(&DivQuotient[0], &q, sizeof(s64));
+                memcpy(&DivRemainder[0], &num, sizeof(s64));
             }
-            else if (num == -0x8000000000000000 && den == -1)
+            else if (num == (s64)-0x8000000000000000LL && den == -1)
             {
-                *(s64*)&DivQuotient[0] = 0x8000000000000000;
-                *(s64*)&DivRemainder[0] = 0;
+                s64 q = 0x8000000000000000LL;
+                s64 r = 0;
+                memcpy(&DivQuotient[0], &q, sizeof(s64));
+                memcpy(&DivRemainder[0], &r, sizeof(s64));
             }
             else
             {
-                *(s64*)&DivQuotient[0] = (s64)(num / den);
-                *(s64*)&DivRemainder[0] = (s64)(num % den);
+                s64 q = (s64)(num / den);
+                s64 r = (s64)(num % den);
+                memcpy(&DivQuotient[0], &q, sizeof(s64));
+                memcpy(&DivRemainder[0], &r, sizeof(s64));
             }
         }
         break;
 
     case 0x0002:
         {
-            s64 num = *(s64*)&DivNumerator[0];
-            s64 den = *(s64*)&DivDenominator[0];
+            s64 num, den;
+            memcpy(&num, &DivNumerator[0], sizeof(s64));
+            memcpy(&den, &DivDenominator[0], sizeof(s64));
+
             if (den == 0)
             {
-                *(s64*)&DivQuotient[0] = (num<0) ? 1:-1;
-                *(s64*)&DivRemainder[0] = num;
+                s64 q = (num < 0) ? 1 : -1;
+                memcpy(&DivQuotient[0], &q, sizeof(s64));
+                memcpy(&DivRemainder[0], &num, sizeof(s64));
             }
-            else if (num == -0x8000000000000000 && den == -1)
+            else if (num == (s64)-0x8000000000000000LL && den == -1)
             {
-                *(s64*)&DivQuotient[0] = 0x8000000000000000;
-                *(s64*)&DivRemainder[0] = 0;
+                s64 q = 0x8000000000000000LL;
+                s64 r = 0;
+                memcpy(&DivQuotient[0], &q, sizeof(s64));
+                memcpy(&DivRemainder[0], &r, sizeof(s64));
             }
             else
             {
-                *(s64*)&DivQuotient[0] = (s64)(num / den);
-                *(s64*)&DivRemainder[0] = (s64)(num % den);
+                s64 q = (s64)(num / den);
+                s64 r = (s64)(num % den);
+                memcpy(&DivQuotient[0], &q, sizeof(s64));
+                memcpy(&DivRemainder[0], &r, sizeof(s64));
             }
         }
         break;
@@ -1813,7 +1831,7 @@ void SqrtDone(u32 param)
 
     if (SqrtCnt & 0x0001)
     {
-        val = *(u64*)&SqrtVal[0];
+        memcpy(&val, &SqrtVal[0], sizeof(u64));
         nbits = 32;
         topshift = 62;
     }
@@ -2875,14 +2893,14 @@ u16 ARM9IORead16(u32 addr)
     case 0x040000DC: return DMAs[3]->Cnt & 0xFFFF;
     case 0x040000DE: return DMAs[3]->Cnt >> 16;
 
-    case 0x040000E0: return ((u16*)DMA9Fill)[0];
-    case 0x040000E2: return ((u16*)DMA9Fill)[1];
-    case 0x040000E4: return ((u16*)DMA9Fill)[2];
-    case 0x040000E6: return ((u16*)DMA9Fill)[3];
-    case 0x040000E8: return ((u16*)DMA9Fill)[4];
-    case 0x040000EA: return ((u16*)DMA9Fill)[5];
-    case 0x040000EC: return ((u16*)DMA9Fill)[6];
-    case 0x040000EE: return ((u16*)DMA9Fill)[7];
+    case 0x040000E0: return (u16)(DMA9Fill[0] & 0xFFFF);
+    case 0x040000E2: return (u16)(DMA9Fill[0] >> 16);
+    case 0x040000E4: return (u16)(DMA9Fill[1] & 0xFFFF);
+    case 0x040000E6: return (u16)(DMA9Fill[1] >> 16);
+    case 0x040000E8: return (u16)(DMA9Fill[2] & 0xFFFF);
+    case 0x040000EA: return (u16)(DMA9Fill[2] >> 16);
+    case 0x040000EC: return (u16)(DMA9Fill[3] & 0xFFFF);
+    case 0x040000EE: return (u16)(DMA9Fill[3] >> 16);
 
     case 0x04000100: return TimerGetCounter(0);
     case 0x04000102: return Timers[0].Cnt;

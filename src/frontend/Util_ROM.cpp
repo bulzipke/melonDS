@@ -86,9 +86,9 @@ void DeInit_ROM()
 
 void SetupSRAMPath(int slot)
 {
-    strncpy(SRAMPath[slot], ROMPath[slot], 1023);
+    snprintf(SRAMPath[slot], sizeof(SRAMPath[slot]), "%s", ROMPath[slot]);
     SRAMPath[slot][1023] = '\0';
-    strncpy(SRAMPath[slot] + strlen(ROMPath[slot]) - 3, "sav", 3);
+    memcpy(SRAMPath[slot] + strlen(ROMPath[slot]) - 3, "sav", 3);
 }
 
 int VerifyDSBIOS()
@@ -224,7 +224,6 @@ int VerifyDSiFirmware()
 int SetupDSiNAND()
 {
     FILE* f;
-    long len;
 
     f = Platform::OpenLocalFile(Config::DSiNANDPath, "r+b");
     if (!f) return Load_DSiNANDMissing;
@@ -257,13 +256,13 @@ void LoadCheats()
     char filename[1024];
     if (ROMPath[ROMSlot_NDS][0] != '\0')
     {
-        strncpy(filename, ROMPath[ROMSlot_NDS], 1023);
+        snprintf(filename, sizeof(filename), "%s", ROMPath[ROMSlot_NDS]);
         filename[1023] = '\0';
-        strncpy(filename + strlen(ROMPath[ROMSlot_NDS]) - 3, "mch", 3);
+	memcpy(filename + strlen(ROMPath[ROMSlot_NDS]) - 3, "mch", 3);
     }
     else
     {
-        strncpy(filename, "firmware.mch", 1023);
+        snprintf(filename, sizeof(filename), "%s", "firmware.mch");
     }
 
     // TODO: check for error (malformed cheat file, ...)
@@ -358,11 +357,11 @@ int LoadROM(const u8 *romdata, u32 romlength, const char *archivefilename, const
 
     char oldpath[1024];
     char oldsram[1024];
-    strncpy(oldpath, ROMPath[slot], 1024);
-    strncpy(oldsram, SRAMPath[slot], 1024);
+    snprintf(oldpath, sizeof(oldpath), "%s", ROMPath[slot]);
+    snprintf(oldsram, sizeof(oldsram), "%s", SRAMPath[slot]);
 
-    strncpy(SRAMPath[slot], sramfilename, 1024);
-    strncpy(ROMPath[slot], archivefilename, 1024);
+    snprintf(SRAMPath[slot], sizeof(SRAMPath[slot]), "%s", sramfilename);
+    snprintf(ROMPath[slot], sizeof(ROMPath[slot]), "%s", archivefilename);
 
     NDS::SetConsoleType(Config::ConsoleType);
 
@@ -376,20 +375,20 @@ int LoadROM(const u8 *romdata, u32 romlength, const char *archivefilename, const
         // TODO: report failure there??
         //if (ROMPath[ROMSlot_GBA][0] != '\0') NDS::LoadGBAROM(ROMPath[ROMSlot_GBA], SRAMPath[ROMSlot_GBA]);
 
-        strncpy(PrevSRAMPath[slot], SRAMPath[slot], 1024); // safety
+	snprintf(PrevSRAMPath[slot], sizeof(PrevSRAMPath[slot]), "%.*s", (int)sizeof(PrevSRAMPath[slot])-1, SRAMPath[slot]);
         return Load_OK;
     }
     else if (slot == ROMSlot_GBA && NDS::LoadGBAROM(romdata, romlength, romfilename, SRAMPath[slot]))
     {
         SavestateLoaded = false; // checkme??
 
-        strncpy(PrevSRAMPath[slot], SRAMPath[slot], 1024); // safety
+	snprintf(PrevSRAMPath[slot], sizeof(PrevSRAMPath[slot]), "%s", SRAMPath[slot]); // safety
         return Load_OK;
     }
     else
     {
-        strncpy(ROMPath[slot], oldpath, 1024);
-        strncpy(SRAMPath[slot], oldsram, 1024);
+	snprintf(ROMPath[slot], sizeof(ROMPath[slot]), "%s", oldpath);
+	snprintf(SRAMPath[slot], sizeof(SRAMPath[slot]), "%s", oldsram);
         return Load_ROMLoadError;
     }
 }
@@ -438,11 +437,10 @@ int LoadROM(const char* file, int slot)
 
     char oldpath[1024];
     char oldsram[1024];
-    strncpy(oldpath, ROMPath[slot], 1024);
-    strncpy(oldsram, SRAMPath[slot], 1024);
+    snprintf(oldpath, sizeof(oldpath), "%s", ROMPath[slot]);
+    snprintf(oldsram, sizeof(oldsram), "%s", SRAMPath[slot]);
 
-    strncpy(ROMPath[slot], file, 1023);
-    ROMPath[slot][1023] = '\0';
+    snprintf(ROMPath[slot], sizeof(ROMPath[slot]), "%s", file);
 
     SetupSRAMPath(0);
     SetupSRAMPath(1);
@@ -459,20 +457,20 @@ int LoadROM(const char* file, int slot)
         // TODO: report failure there??
         if (ROMPath[ROMSlot_GBA][0] != '\0') NDS::LoadGBAROM(ROMPath[ROMSlot_GBA], SRAMPath[ROMSlot_GBA]);
 
-        strncpy(PrevSRAMPath[slot], SRAMPath[slot], 1024); // safety
+	snprintf(PrevSRAMPath[slot], sizeof(PrevSRAMPath[slot]), "%.*s", (int)sizeof(PrevSRAMPath[slot])-1, SRAMPath[slot]);
         return Load_OK;
     }
     else if (slot == ROMSlot_GBA && NDS::LoadGBAROM(ROMPath[slot], SRAMPath[slot]))
     {
         SavestateLoaded = false; // checkme??
 
-        strncpy(PrevSRAMPath[slot], SRAMPath[slot], 1024); // safety
+	snprintf(PrevSRAMPath[slot], sizeof(PrevSRAMPath[slot]), "%s", SRAMPath[slot]); // safety
         return Load_OK;
     }
     else
     {
-        strncpy(ROMPath[slot], oldpath, 1024);
-        strncpy(SRAMPath[slot], oldsram, 1024);
+	snprintf(ROMPath[slot], sizeof(ROMPath[slot]), "%s", oldpath);
+        snprintf(SRAMPath[slot], sizeof(SRAMPath[slot]), "%s", oldsram);
         return Load_ROMLoadError;
     }
 }
@@ -606,7 +604,7 @@ int Reset()
     else
     {
         char ext[5] = {0}; int _len = strlen(ROMPath[ROMSlot_NDS]);
-        strncpy(ext, ROMPath[ROMSlot_NDS] + _len - 4, 4);
+	snprintf(ext, sizeof(ext), "%s", ROMPath[ROMSlot_NDS] + _len - 4);
 
         if(!strncasecmp(ext, ".nds", 4) || !strncasecmp(ext, ".srl", 4) || !strncasecmp(ext, ".dsi", 4))
         {
@@ -619,14 +617,14 @@ int Reset()
         {
             u8 *romdata = nullptr; u32 romlen;
             char romfilename[1024] = {0}, sramfilename[1024];
-            strncpy(sramfilename, SRAMPath[ROMSlot_NDS], 1024); // Use existing SRAMPath
+	    snprintf(sramfilename, sizeof(sramfilename), "%s", SRAMPath[ROMSlot_NDS]); // Use existing SRAMPath
 
             int pos = strlen(sramfilename) - 1;
             while(pos > 0 && sramfilename[pos] != '/' && sramfilename[pos] != '\\')
                 --pos;
 
             strncpy(romfilename, &sramfilename[pos + 1], 1024);
-            strncpy(&romfilename[strlen(romfilename) - 3], NDSROMExtension, 3); // extension could be nds, srl or dsi
+	    memcpy(&romfilename[strlen(romfilename) - 3], NDSROMExtension, 3); // extension could be nds, srl or dsi
             printf("RESET loading from archive : %s\n", romfilename);
             romlen = Archive::ExtractFileFromArchive(ROMPath[ROMSlot_NDS], romfilename, &romdata);
             if(!romdata)
@@ -643,7 +641,7 @@ int Reset()
     if (ROMPath[ROMSlot_GBA][0] != '\0')
     {
         char ext[5] = {0}; int _len = strlen(ROMPath[ROMSlot_GBA]);
-        strncpy(ext, ROMPath[ROMSlot_GBA] + _len - 4, 4);
+	snprintf(ext, sizeof(ext), "%s", ROMPath[ROMSlot_GBA] + _len - 4);
 
         if(!strncasecmp(ext, ".gba", 4))
         {
@@ -656,14 +654,14 @@ int Reset()
         {
             u8 *romdata = nullptr; u32 romlen;
             char romfilename[1024] = {0}, sramfilename[1024];
-            strncpy(sramfilename, SRAMPath[ROMSlot_GBA], 1024); // Use existing SRAMPath
+	    snprintf(sramfilename, sizeof(sramfilename), "%s", SRAMPath[ROMSlot_GBA]); // Use existing SRAMPath
 
             int pos = strlen(sramfilename) - 1;
             while(pos > 0 && sramfilename[pos] != '/' && sramfilename[pos] != '\\')
                 --pos;
 
-            strncpy(romfilename, &sramfilename[pos + 1], 1024);
-            strncpy(&romfilename[strlen(romfilename) - 3], "gba", 3);
+	    snprintf(romfilename, sizeof(romfilename), "%s", &sramfilename[pos + 1]);
+	    memcpy(&romfilename[strlen(romfilename) - 3], "gba", 3);
             printf("RESET loading from archive : %s\n", romfilename);
             romlen = Archive::ExtractFileFromArchive(ROMPath[ROMSlot_GBA], romfilename, &romdata);
             if(!romdata)
@@ -692,14 +690,14 @@ void GetSavestateName(int slot, char* filename, int len)
 
     if (ROMPath[ROMSlot_NDS][0] == '\0') // running firmware, no ROM
     {
-        strcpy(filename, "firmware");
+        snprintf(filename, len, "%s", "firmware");
         pos = 8;
     }
     else
     {
         char *rompath;
         char ext[5] = {0}; int _len = strlen(ROMPath[ROMSlot_NDS]);
-        strncpy(ext, ROMPath[ROMSlot_NDS] + _len - 4, 4);
+	snprintf(ext, sizeof(ext), "%s", ROMPath[ROMSlot_NDS] + _len - 4);
 
         if(!strncasecmp(ext, ".nds", 4) || !strncasecmp(ext, ".srl", 4) || !strncasecmp(ext, ".dsi", 4))
             rompath = ROMPath[ROMSlot_NDS];
@@ -714,7 +712,7 @@ void GetSavestateName(int slot, char* filename, int len)
         // avoid buffer overflow. shoddy
         if (pos > len-5) pos = len-5;
 
-        strncpy(&filename[0], rompath, pos);
+	snprintf(filename, len, "%.*s", pos, rompath);
     }
     strcpy(&filename[pos], ".ml");
     filename[pos+3] = '0'+slot;
@@ -759,9 +757,9 @@ bool LoadState(const char* filename)
     {
         if (Config::SavestateRelocSRAM && ROMPath[ROMSlot_NDS][0]!='\0')
         {
-            strncpy(PrevSRAMPath[ROMSlot_NDS], SRAMPath[0], 1024);
+	    snprintf(PrevSRAMPath[ROMSlot_NDS], sizeof(PrevSRAMPath[ROMSlot_NDS]), "%s", SRAMPath[0]);
 
-            strncpy(SRAMPath[ROMSlot_NDS], filename, 1019);
+	    snprintf(SRAMPath[ROMSlot_NDS], sizeof(SRAMPath[ROMSlot_NDS]), "%.*s", 1019, filename);
             int len = strlen(SRAMPath[ROMSlot_NDS]);
             strcpy(&SRAMPath[ROMSlot_NDS][len], ".sav");
             SRAMPath[ROMSlot_NDS][len+4] = '\0';
@@ -814,7 +812,7 @@ bool SaveState(const char* filename)
 
         if (Config::SavestateRelocSRAM && ROMPath[ROMSlot_NDS][0]!='\0')
         {
-            strncpy(SRAMPath[ROMSlot_NDS], filename, 1019);
+	    snprintf(SRAMPath[ROMSlot_NDS], sizeof(SRAMPath[ROMSlot_NDS]), "%.*s", 1019, filename);
             int len = strlen(SRAMPath[ROMSlot_NDS]);
             strcpy(&SRAMPath[ROMSlot_NDS][len], ".sav");
             SRAMPath[ROMSlot_NDS][len+4] = '\0';
@@ -840,7 +838,7 @@ void UndoStateLoad()
 
     if (ROMPath[ROMSlot_NDS][0]!='\0')
     {
-        strncpy(SRAMPath[ROMSlot_NDS], PrevSRAMPath[ROMSlot_NDS], 1024);
+	snprintf(SRAMPath[ROMSlot_NDS], sizeof(SRAMPath[ROMSlot_NDS]), "%s", PrevSRAMPath[ROMSlot_NDS]);
         NDS::RelocateSave(SRAMPath[ROMSlot_NDS], false);
     }
 #endif

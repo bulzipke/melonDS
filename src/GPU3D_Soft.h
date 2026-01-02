@@ -223,7 +223,7 @@ private:
         s32 xrecip, xrecip_z;
         s32 w0n, w0d, w1d;
 
-        u32 yfactor;
+        u32 yfactor = 0;
     };
 
 

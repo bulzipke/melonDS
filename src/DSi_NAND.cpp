@@ -52,7 +52,7 @@ u8 ESKey[16];
 
 
 UINT FF_ReadNAND(BYTE* buf, LBA_t sector, UINT num);
-UINT FF_WriteNAND(BYTE* buf, LBA_t sector, UINT num);
+UINT FF_WriteNAND(const BYTE* buf, LBA_t sector, UINT num);
 
 
 bool Init(FILE* nandfile, u8* es_keyY)
@@ -198,7 +198,7 @@ u32 ReadFATBlock(u64 addr, u32 len, u8* buf)
     return len;
 }
 
-u32 WriteFATBlock(u64 addr, u32 len, u8* buf)
+u32 WriteFATBlock(u64 addr, u32 len, const u8* buf)
 {
     u32 ctr = (u32)(addr >> 4);
 
@@ -238,7 +238,7 @@ UINT FF_ReadNAND(BYTE* buf, LBA_t sector, UINT num)
     return res >> 9;
 }
 
-UINT FF_WriteNAND(BYTE* buf, LBA_t sector, UINT num)
+UINT FF_WriteNAND(const BYTE* buf, LBA_t sector, UINT num)
 {
     // TODO: allow selecting other partitions?
     u64 baseaddr = 0x10EE00;
@@ -294,14 +294,14 @@ bool ESEncrypt(u8* data, u32 len)
 
         memset(rem, 0, 16);
 
-        for (int i = 0; i < remlen; i++)
+        for (u32 i = 0; i < remlen; i++)
             rem[15-i] = data[coarselen+i];
 
         for (int i = 0; i < 16; i++) mac[i] ^= rem[i];
         AES_CTR_xcrypt_buffer(&ctx, rem, 16);
         AES_ECB_encrypt(&ctx, mac);
 
-        for (int i = 0; i < remlen; i++)
+        for (u32 i = 0; i < remlen; i++)
             data[coarselen+i] = rem[15-i];
     }
 
@@ -388,7 +388,7 @@ bool ESDecrypt(u8* data, u32 len)
         AES_ctx_set_iv(&ctx, iv);
         AES_CTR_xcrypt_buffer(&ctx, rem, 16);
 
-        for (int i = 0; i < remlen; i++)
+        for (u32 i = 0; i < remlen; i++)
             rem[15-i] = data[coarselen+i];
 
         AES_ctx_set_iv(&ctx, iv);
@@ -396,7 +396,7 @@ bool ESDecrypt(u8* data, u32 len)
         for (int i = 0; i < 16; i++) mac[i] ^= rem[i];
         AES_ECB_encrypt(&ctx, mac);
 
-        for (int i = 0; i < remlen; i++)
+        for (u32 i = 0; i < remlen; i++)
             data[coarselen+i] = rem[15-i];
     }
 
@@ -974,8 +974,6 @@ bool ImportTitle(const char* appfile, u8* tmd, bool readonly)
     printf("Title ID: %08x/%08x\n", titleid0, titleid1);
 
     FRESULT res;
-    DIR ticketdir;
-    FILINFO info;
 
     char fname[128];
     FIL file;

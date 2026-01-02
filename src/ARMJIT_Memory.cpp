@@ -386,7 +386,9 @@ struct Mapping
             }
             else
             {
+#ifdef __SWITCH__
                 u32 segmentOffset = offset;
+#endif
                 u8 status = statuses[(Addr + offset) >> 12];
                 while (statuses[(Addr + offset) >> 12] == status
                     && offset < Size

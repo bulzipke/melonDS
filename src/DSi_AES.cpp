@@ -60,7 +60,7 @@ bool OutputMACDue;
 AES_ctx Ctx;
 
 
-void Swap16(u8* dst, u8* src)
+void Swap16(u8* dst, const u8* src)
 {
     for (int i = 0; i < 16; i++)
         dst[i] = src[15-i];

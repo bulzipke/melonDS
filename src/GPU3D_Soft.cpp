@@ -563,7 +563,7 @@ void SoftRenderer::PlotTranslucentPixel(u32 pixeladdr, u32 color, u32 z, u32 pol
 
     color = AlphaBlend(color, ColorBuffer[pixeladdr], color>>24);
 
-    if (z != -1)
+    if (z != 0xFFFFFFFF)
         DepthBuffer[pixeladdr] = z;
 
     ColorBuffer[pixeladdr] = color;
@@ -713,13 +713,10 @@ void SoftRenderer::RenderShadowMaskScanline(RendererPolygon* rp, s32 y)
         }
     }
 
-    Vertex *vlcur, *vlnext, *vrcur, *vrnext;
     s32 xstart, xend;
     bool l_filledge, r_filledge;
     s32 l_edgelen, r_edgelen;
     s32 l_edgecov, r_edgecov;
-    Interpolator<1>* interp_start;
-    Interpolator<1>* interp_end;
 
     xstart = rp->XL;
     xend = rp->XR;
@@ -746,14 +743,6 @@ void SoftRenderer::RenderShadowMaskScanline(RendererPolygon* rp, s32 y)
     // if the left and right edges are swapped, render backwards.
     if (xstart > xend)
     {
-        vlcur = polygon->Vertices[rp->CurVR];
-        vlnext = polygon->Vertices[rp->NextVR];
-        vrcur = polygon->Vertices[rp->CurVL];
-        vrnext = polygon->Vertices[rp->NextVL];
-
-        interp_start = &rp->SlopeR.Interp;
-        interp_end = &rp->SlopeL.Interp;
-
         rp->SlopeR.EdgeParams_YMajor(&l_edgelen, &l_edgecov);
         rp->SlopeL.EdgeParams_YMajor(&r_edgelen, &r_edgecov);
 
@@ -764,14 +753,6 @@ void SoftRenderer::RenderShadowMaskScanline(RendererPolygon* rp, s32 y)
     }
     else
     {
-        vlcur = polygon->Vertices[rp->CurVL];
-        vlnext = polygon->Vertices[rp->NextVL];
-        vrcur = polygon->Vertices[rp->CurVR];
-        vrnext = polygon->Vertices[rp->NextVR];
-
-        interp_start = &rp->SlopeL.Interp;
-        interp_end = &rp->SlopeR.Interp;
-
         rp->SlopeL.EdgeParams(&l_edgelen, &l_edgecov);
         rp->SlopeR.EdgeParams(&r_edgelen, &r_edgecov);
     }

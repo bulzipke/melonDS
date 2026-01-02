@@ -341,7 +341,7 @@ void Channel::NextSample_PCM8()
 {
     Pos++;
     if (Pos < 0) return;
-    if (Pos >= (LoopPos + Length))
+    if ((u32)Pos >= (LoopPos + Length))
     {
         u32 repeat = (Cnt >> 27) & 0x3;
         if (repeat & 1)
@@ -364,7 +364,7 @@ void Channel::NextSample_PCM16()
 {
     Pos++;
     if (Pos < 0) return;
-    if ((Pos<<1) >= (LoopPos + Length))
+    if ((u32)(Pos<<1) >= (LoopPos + Length))
     {
         u32 repeat = (Cnt >> 27) & 0x3;
         if (repeat & 1)
@@ -403,7 +403,7 @@ void Channel::NextSample_ADPCM()
         return;
     }
 
-    if ((Pos>>1) >= (LoopPos + Length))
+    if ((u32)(Pos>>1) >= (LoopPos + Length))
     {
         u32 repeat = (Cnt >> 27) & 0x3;
         if (repeat & 1)
@@ -448,7 +448,7 @@ void Channel::NextSample_ADPCM()
         if      (ADPCMIndex < 0)  ADPCMIndex = 0;
         else if (ADPCMIndex > 88) ADPCMIndex = 88;
 
-        if (Pos == (LoopPos<<1))
+        if ((u32)Pos == (LoopPos<<1))
         {
             ADPCMValLoop = ADPCMVal;
             ADPCMIndexLoop = ADPCMIndex;
@@ -649,7 +649,7 @@ void CaptureUnit::Run(s32 sample)
 
             FIFO_WriteData<s8>((s8)(sample >> 8));
             Pos++;
-            if (Pos >= Length)
+            if ((u32)Pos >= Length)
             {
                 if (FIFOLevel >= 4)
                     FIFO_FlushData();
@@ -672,7 +672,7 @@ void CaptureUnit::Run(s32 sample)
 
             FIFO_WriteData<s16>((s16)sample);
             Pos += 2;
-            if (Pos >= Length)
+            if ((u32)Pos >= Length)
             {
                 if (FIFOLevel >= 4)
                     FIFO_FlushData();

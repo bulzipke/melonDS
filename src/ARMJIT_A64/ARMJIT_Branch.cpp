@@ -18,6 +18,11 @@
 
 #include "ARMJIT_Compiler.h"
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winvalid-offsetof"
+#endif
+
 using namespace Arm64Gen;
 
 // hack
@@ -82,7 +87,7 @@ void Compiler::Comp_JumpTo(u32 addr, bool forceNonConstantCycles)
             // doesn't matter if we put garbage in the MSbs there
             if (addr & 0x2)
             {
-                cpu9->CodeRead32(addr-2, true) >> 16;
+                (void)(cpu9->CodeRead32(addr-2, true) >> 16);
                 cycles += cpu9->CodeCycles;
                 cpu9->CodeRead32(addr+2, false);
                 cycles += CurCPU->CodeCycles;
@@ -437,3 +442,7 @@ void Compiler::T_Comp_BL_Merged()
 }
 
 }
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif

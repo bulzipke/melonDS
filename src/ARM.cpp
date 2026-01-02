@@ -323,8 +323,8 @@ void ARMv4::JumpTo(u32 addr, bool restorecpsr)
         else                addr &= ~0x1;
     }
 
-    u32 oldregion = R[15] >> 23;
-    u32 newregion = addr >> 23;
+    //u32 oldregion = R[15] >> 23;
+    //u32 newregion = addr >> 23;
 
     CodeRegion = addr >> 24;
     CodeCycles = addr >> 15; // cheato

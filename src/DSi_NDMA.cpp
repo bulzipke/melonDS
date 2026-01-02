@@ -166,7 +166,7 @@ void DSi_NDMA::Run9()
     Executing = true;
 
     // add NS penalty for first accesses in burst
-    bool burststart = (Running == 2);
+    //bool burststart = (Running == 2);
     Running = 1;
 
     s32 unitcycles;
@@ -255,7 +255,7 @@ void DSi_NDMA::Run7()
     Executing = true;
 
     // add NS penalty for first accesses in burst
-    bool burststart = (Running == 2);
+    //bool burststart = (Running == 2);
     Running = 1;
 
     s32 unitcycles;

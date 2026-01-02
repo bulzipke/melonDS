@@ -224,10 +224,11 @@ void DSi_SDHost::UpdateCardIRQ(u16 oldmask)
 
 void DSi_SDHost::SendResponse(u32 val, bool last)
 {
-    *(u32*)&ResponseBuffer[6] = *(u32*)&ResponseBuffer[4];
-    *(u32*)&ResponseBuffer[4] = *(u32*)&ResponseBuffer[2];
-    *(u32*)&ResponseBuffer[2] = *(u32*)&ResponseBuffer[0];
-    *(u32*)&ResponseBuffer[0] = val;
+    memcpy(&ResponseBuffer[6], &ResponseBuffer[4], sizeof(u32));
+    memcpy(&ResponseBuffer[4], &ResponseBuffer[2], sizeof(u32));
+    memcpy(&ResponseBuffer[2], &ResponseBuffer[0], sizeof(u32));
+
+    memcpy(&ResponseBuffer[0], &val, sizeof(u32));
 
     if (last) SetIRQ(0);
 }
@@ -488,7 +489,7 @@ u16 DSi_SDHost::ReadFIFO16()
         return 0;
     }
 
-    DSi_SDDevice* dev = Ports[PortSelect & 0x1];
+    //DSi_SDDevice* dev = Ports[PortSelect & 0x1];
     u16 ret = DataFIFO[f].Read();
 
     if (DataFIFO[f].IsEmpty())
@@ -509,7 +510,7 @@ u32 DSi_SDHost::ReadFIFO32()
         return 0;
     }
 
-    DSi_SDDevice* dev = Ports[PortSelect & 0x1];
+    //DSi_SDDevice* dev = Ports[PortSelect & 0x1];
     u32 ret = DataFIFO32.Read();
 
     if (DataFIFO32.IsEmpty())
@@ -645,7 +646,7 @@ void DSi_SDHost::Write(u32 addr, u16 val)
 
 void DSi_SDHost::WriteFIFO16(u16 val)
 {
-    DSi_SDDevice* dev = Ports[PortSelect & 0x1];
+    //DSi_SDDevice* dev = Ports[PortSelect & 0x1];
     u32 f = CurFIFO;
     if (DataFIFO[f].IsFull())
     {

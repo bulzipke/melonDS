@@ -1604,7 +1604,7 @@ bool LoadROMCommon(u32 filelength, const char *sram, bool direct)
             {
                 printf("Re-encrypting cart secure area\n");
 
-                strncpy((char*)&CartROM[arm9base], "encryObj", 8);
+		memcpy(&CartROM[arm9base], "encryObj", 8);
 
                 Key1_InitKeycode(false, gamecode, 3, 2);
                 for (u32 i = 0; i < 0x800; i += 8)

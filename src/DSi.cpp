@@ -237,7 +237,8 @@ void DecryptModcryptArea(u32 offset, u32 size, u8* iv)
 
     // find a matching binary area
 
-    u32 binaryaddr, binarysize;
+    u32 binaryaddr;
+    //u32 binarysize;
     u32 roundedsize = (size + 0xF) & ~0xF;
 
     // CHECKME: GBAtek says the modcrypt area should be the same size, or bigger,
@@ -250,22 +251,22 @@ void DecryptModcryptArea(u32 offset, u32 size, u8* iv)
     if (BINARY_GOOD(ARM9))
     {
         binaryaddr = NDSCart::Header.ARM9RAMAddress;
-        binarysize = NDSCart::Header.ARM9Size;
+        //binarysize = NDSCart::Header.ARM9Size;
     }
     else if (BINARY_GOOD(ARM7))
     {
         binaryaddr = NDSCart::Header.ARM7RAMAddress;
-        binarysize = NDSCart::Header.ARM7Size;
+        //binarysize = NDSCart::Header.ARM7Size;
     }
     else if (BINARY_GOOD(DSiARM9i))
     {
         binaryaddr = NDSCart::Header.DSiARM9iRAMAddress;
-        binarysize = NDSCart::Header.DSiARM9iSize;
+        //binarysize = NDSCart::Header.DSiARM9iSize;
     }
     else if (BINARY_GOOD(DSiARM7i))
     {
         binaryaddr = NDSCart::Header.DSiARM7iRAMAddress;
-        binarysize = NDSCart::Header.DSiARM7iSize;
+        //binarysize = NDSCart::Header.DSiARM7iSize;
     }
     else
         return;
@@ -966,7 +967,7 @@ void MapNWRAM_B(u32 num, u8 val)
         NWRAMMap_B[1][part] = NULL;
         NWRAMMap_B[2][part] = NULL;
     }
-    for (int part = 7; part >= 0; part--)
+    for (u32 part = 7; part >= 0; part--)
     {
         u8* ptr = &NWRAM_B[part << 15];
 
@@ -1021,7 +1022,7 @@ void MapNWRAM_C(u32 num, u8 val)
         NWRAMMap_C[1][part] = NULL;
         NWRAMMap_C[2][part] = NULL;
     }
-    for (int part = 7; part >= 0; part--)
+    for (u32 part = 7; part >= 0; part--)
     {
         u8* ptr = &NWRAM_C[part << 15];
 
@@ -2338,8 +2339,8 @@ void ARM9IOWrite32(u32 addr, u32 val)
         {
             if (!(SCFG_EXT[0] & (1 << 31))) /* no access to SCFG Registers if disabled*/
                 return;
-            u32 oldram = (SCFG_EXT[0] >> 14) & 0x3;
-            u32 newram = (val >> 14) & 0x3;
+            //u32 oldram = (SCFG_EXT[0] >> 14) & 0x3;
+            //u32 newram = (val >> 14) & 0x3;
 
             SCFG_EXT[0] &= ~0x8007F19F;
             SCFG_EXT[0] |= (val & 0x8007F19F);

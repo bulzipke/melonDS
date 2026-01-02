@@ -48,7 +48,7 @@ u8* Compiler::RewriteMemAccess(u8* pc)
         SetCodePtrUnsafe(pcOffset + patch.PatchOffset);
 
         BL(patch.PatchFunc);
-        for (int i = 0; i < patch.PatchSize / 4 - 1; i++)
+        for (u32 i = 0; i < patch.PatchSize / 4 - 1; i++)
             HINT(HINT_NOP);
         FlushIcacheSection((u8*)pc + patch.PatchOffset, (u8*)GetRXPtr());
 
@@ -513,7 +513,7 @@ s32 Compiler::Comp_MemAccessBlock(int rn, BitSet16 regs, bool store, bool preinc
             MOV(W0, MapReg(rn));
     }
 
-    u8* patchFunc;
+    u8* patchFunc = nullptr;
     if (compileFastPath)
     {
         ptrdiff_t fastPathStart = GetCodeOffset();
@@ -799,8 +799,8 @@ void Compiler::A_Comp_LDM_STM()
     ARM64Reg rn = MapReg(CurInstr.A_Reg(16));
 
     if (load && writeback && regs[CurInstr.A_Reg(16)])
-        writeback = Num == 0
-            && (!(regs & ~BitSet16(1 << CurInstr.A_Reg(16)))) || (regs & ~BitSet16((2 << CurInstr.A_Reg(16)) - 1));
+        writeback = (Num == 0 && (!(regs & ~BitSet16(1 << CurInstr.A_Reg(16))))) 
+		|| (regs & ~BitSet16((2 << CurInstr.A_Reg(16)) - 1));
 
     s32 offset = Comp_MemAccessBlock(CurInstr.A_Reg(16), regs, !load, pre, !add, usermode, load && writeback);
 
@@ -842,7 +842,6 @@ void Compiler::T_Comp_LDMIA_STMIA()
     BitSet16 regs(CurInstr.Instr & 0xFF);
     ARM64Reg rb = MapReg(CurInstr.T_Reg(8));
     bool load = CurInstr.Instr & (1 << 11);
-    u32 regsCount = regs.Count();
 
     bool writeback = !load || !regs[CurInstr.T_Reg(8)];
 

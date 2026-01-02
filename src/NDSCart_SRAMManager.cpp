@@ -150,7 +150,7 @@ void Flush()
 }
 #endif
 
-void FlushSecondaryBuffer(u8* dst, s32 dstLength)
+void FlushSecondaryBuffer(u8* dst, u32 dstLength)
 {
     // When flushing to a file, there's no point in re-writing the exact same data.
     if (!dst && !NeedsFlush()) return;
@@ -186,7 +186,7 @@ bool NeedsFlush()
     return FlushVersion != PreviousFlushVersion;
 }
 
-void UpdateBuffer(u8* src, s32 srcLength)
+void UpdateBuffer(u8* src, u32 srcLength)
 {
     if (!src || srcLength != Length) return;
 

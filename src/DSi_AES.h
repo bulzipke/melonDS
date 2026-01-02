@@ -46,7 +46,7 @@ void WriteKeyNormal(u32 slot, u32 offset, u32 val, u32 mask);
 void WriteKeyX(u32 slot, u32 offset, u32 val, u32 mask);
 void WriteKeyY(u32 slot, u32 offset, u32 val, u32 mask);
 
-void Swap16(u8* dst, u8* src);
+void Swap16(u8* dst, const u8* src);
 void DeriveNormalKey(u8* keyX, u8* keyY, u8* normalkey);
 
 }

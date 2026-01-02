@@ -21,6 +21,11 @@
 #include "Platform.h"
 
 #ifdef __LIBRETRO__
+#undef fclose
+#undef fread
+#undef fwrite
+#undef fseek
+#undef ftell
 #define fclose(stream) memstream_close(stream)
 #define fread(data, len, count, stream) memstream_read(stream, data, len)
 #define fwrite(data, len, count, stream) memstream_write(stream, data, len)

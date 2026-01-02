@@ -418,7 +418,7 @@ int ff_del_syncobj (FF_SYNC_t sobj);	/* Delete a sync object */
 // extra additions for interfacing with melonDS
 
 typedef UINT (*ff_disk_read_cb)(BYTE* buff, LBA_t sector, UINT count);
-typedef UINT (*ff_disk_write_cb)(BYTE* buff, LBA_t sector, UINT count);
+typedef UINT (*ff_disk_write_cb)(const BYTE* buff, LBA_t sector, UINT count);
 
 void ff_disk_open(ff_disk_read_cb readcb, ff_disk_write_cb writecb);
 void ff_disk_close();

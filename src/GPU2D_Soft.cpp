@@ -253,7 +253,7 @@ void SoftRenderer::DrawScanline(u32 line, Unit* unit)
         {
             int i = 0;
             for (; i < (stride & ~1); i+=2)
-                *(u64*)&dst[i] = *(u64*)&BGOBJLine[i];
+	        memcpy(&dst[i], &BGOBJLine[i], sizeof(u64));
         }
         break;
 
@@ -775,7 +775,7 @@ void SoftRenderer::DrawScanline_BGOBJ(u32 line)
         backdrop |= (backdrop << 32);
 
         for (int i = 0; i < 256; i+=2)
-            *(u64*)&BGOBJLine[i] = backdrop;
+	    memcpy(&BGOBJLine[i], &backdrop, sizeof(u64));
     }
 
     if (CurUnit->DispCnt & 0xE000)
@@ -860,24 +860,25 @@ void SoftRenderer::DrawScanline_BGOBJ(u32 line)
                 {
                     // 3D on bottom, blending
 
-                    u32 eva, evb;
+                    u32 eva = CurUnit->EVA;
+		    u32 evb = CurUnit->EVB;
                     if ((flag1 & 0xC0) == 0xC0)
                     {
                         eva = flag1 & 0x1F;
-                        evb = 16 - eva;
+			evb = 16 - eva;
                     }
                     else if (((CurUnit->BlendCnt & target1) && (WindowMask[i] & 0x20)) ||
                             ((flag1 & 0xC0) == 0x80))
                     {
                         eva = CurUnit->EVA;
-                        evb = CurUnit->EVB;
+			evb = CurUnit->EVB;
                     }
                     else
                         bldcnteffect = 7;
 
                     BGOBJLine[i]     = val1;
                     BGOBJLine[256+i] = ColorComposite(i, val1, val3);
-                    BGOBJLine[512+i] = (bldcnteffect << 24) | (CurUnit->EVB << 16) | (CurUnit->EVA << 8);
+                    BGOBJLine[512+i] = (bldcnteffect << 24) | (evb << 16) | (eva << 8);
                 }
                 else
                 {
@@ -1024,9 +1025,9 @@ void SoftRenderer::DrawBG_Text(u32 line, u32 bgnum)
     else
         tilemapaddr += ((yoff & 0xF8) << 3);
 
-    u16 curtile;
-    u16* curpal;
-    u32 pixelsaddr;
+    u16 curtile = 0;
+    u16* curpal = nullptr;
+    u32 pixelsaddr = 0;
     u8 color;
     u32 lastxpos;
 
@@ -1145,8 +1146,8 @@ void SoftRenderer::DrawBG_Affine(u32 line, u32 bgnum)
     u32 tilesetaddr, tilemapaddr;
     u16* pal;
 
-    u32 coordmask;
-    u32 yshift;
+    u32 coordmask = 0;
+    u32 yshift = 0;
     switch (bgcnt & 0xC000)
     {
     case 0x0000: coordmask = 0x07800; yshift = 7; break;
@@ -1272,8 +1273,9 @@ void SoftRenderer::DrawBG_Extended(u32 line, u32 bgnum)
     {
         // bitmap modes
 
-        u32 xmask, ymask;
-        u32 yshift;
+        u32 xmask = 0;
+	u32 ymask = 0;
+        u32 yshift = 0;
         switch (bgcnt & 0xC000)
         {
         case 0x0000: xmask = 0x07FFF; ymask = 0x07FFF; yshift = 7; break;
@@ -1377,8 +1379,8 @@ void SoftRenderer::DrawBG_Extended(u32 line, u32 bgnum)
     {
         // mixed affine/text mode
 
-        u32 coordmask;
-        u32 yshift;
+        u32 coordmask = 0;
+        u32 yshift = 0;
         switch (bgcnt & 0xC000)
         {
         case 0x0000: coordmask = 0x07800; yshift = 7; break;
@@ -1471,8 +1473,9 @@ void SoftRenderer::DrawBG_Large(u32 line) // BG is always BG2
     // 1: 1024x512
     // 2: 512x256
     // 3: 512x512
-    u32 xmask, ymask;
-    u32 yshift;
+    u32 xmask = 0;
+    u32 ymask = 0;
+    u32 yshift = 0;
     switch (bgcnt & 0xC000)
     {
     case 0x0000: xmask = 0x1FFFF; ymask = 0x3FFFF; yshift = 9; break;
@@ -1742,8 +1745,6 @@ void SoftRenderer::DrawSprites(u32 line, Unit* unit)
                 s32 xpos = (s32)(attrib[1] << 23) >> 23;
                 if (xpos <= -boundwidth)
                     continue;
-
-                u32 rotparamgroup = (attrib[1] >> 9) & 0x1F;
 
                 DoDrawSprite(Rotscale, sprnum, boundwidth, boundheight, width, height, xpos, ypos);
 
@@ -2197,7 +2198,6 @@ void SoftRenderer::DrawSprite_Normal(u32 num, u32 width, u32 height, s32 xpos, s
             // 16-color
             pixelsaddr <<= 5;
             pixelsaddr += ((ypos & 0x7) << 2);
-            s32 pixelstride;
 
             if (!window)
             {
@@ -2214,13 +2214,11 @@ void SoftRenderer::DrawSprite_Normal(u32 num, u32 width, u32 height, s32 xpos, s
                 pixelsaddr += (((width-1) & 0x7) >> 1);
                 pixelsaddr -= ((xoff & wmask) << 2);
                 pixelsaddr -= ((xoff & 0x7) >> 1);
-                pixelstride = -1;
             }
             else
             {
                 pixelsaddr += ((xoff & wmask) << 2);
                 pixelsaddr += ((xoff & 0x7) >> 1);
-                pixelstride = 1;
             }
 
             for (; xoff < xend;)

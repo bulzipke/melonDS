@@ -1022,10 +1022,9 @@ void SubmitPolygon()
     Vertex clippedvertices[10];
     Vertex* reusedvertices[2];
     int clipstart = 0;
-    int lastpolyverts = 0;
+    u32 lastpolyverts = 0;
 
-    int nverts = PolygonMode & 0x1 ? 4:3;
-    int prev, next;
+    u32 nverts = PolygonMode & 0x1 ? 4:3;
 
     // submitting a polygon starts the polygon pipeline
     // noting that for now we are only reserving one vertex slot
@@ -1038,14 +1037,13 @@ void SubmitPolygon()
     // TODO: work out how it works on the real thing
     // the normalization part is a wild guess
 
-    Vertex *v0, *v1, *v2, *v3;
+    Vertex *v0, *v1, *v2;
     s64 normalX, normalY, normalZ;
     s64 dot;
 
     v0 = &TempVertexBuffer[0];
     v1 = &TempVertexBuffer[1];
     v2 = &TempVertexBuffer[2];
-    v3 = &TempVertexBuffer[3];
 
     normalX = ((s64)(v0->Position[1]-v1->Position[1]) * (v2->Position[3]-v1->Position[3]))
         - ((s64)(v0->Position[3]-v1->Position[3]) * (v2->Position[1]-v1->Position[1]));
@@ -1128,7 +1126,7 @@ void SubmitPolygon()
         }
     }
 
-    for (int i = clipstart; i < nverts; i++)
+    for (u32 i = clipstart; i < nverts; i++)
         clippedvertices[i] = TempVertexBuffer[i];
 
     // detect lines, for the OpenGL renderer
@@ -1168,7 +1166,7 @@ void SubmitPolygon()
 
     // compute screen coordinates
 
-    for (int i = clipstart; i < nverts; i++)
+    for (u32 i = clipstart; i < nverts; i++)
     {
         Vertex* vtx = &clippedvertices[i];
 
@@ -1230,7 +1228,7 @@ void SubmitPolygon()
         bool zerodot = true;
         bool allbehind = true;
 
-        for (int i = 0; i < nverts; i++)
+        for (u32 i = 0; i < nverts; i++)
         {
             Vertex* vtx = &clippedvertices[i];
 
@@ -1241,7 +1239,7 @@ void SubmitPolygon()
                 break;
             }
 
-            if (vtx->Position[3] <= ZeroDotWLimit)
+            if (vtx->Position[3] <= (s32)ZeroDotWLimit)
             {
                 allbehind = false;
                 break;
@@ -1317,7 +1315,7 @@ void SubmitPolygon()
         poly->NumVertices += 2;
     }
 
-    for (int i = clipstart; i < nverts; i++)
+    for (u32 i = clipstart; i < nverts; i++)
     {
         Vertex* vtx = &CurVertexRAM[NumVertices];
         *vtx = clippedvertices[i];
@@ -1344,7 +1342,7 @@ void SubmitPolygon()
     s32 xtop = 256, xbot = 0;
     u32 wsize = 0;
 
-    for (int i = 0; i < nverts; i++)
+    for (u32 i = 0; i < nverts; i++)
     {
         Vertex* vtx = poly->Vertices[i];
 
@@ -1379,7 +1377,7 @@ void SubmitPolygon()
 
     poly->WBuffer = (FlushAttributes & 0x2);
 
-    for (int i = 0; i < nverts; i++)
+    for (u32 i = 0; i < nverts; i++)
     {
         Vertex* vtx = poly->Vertices[i];
         s32 w, wshifted;

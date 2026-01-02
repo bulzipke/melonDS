@@ -501,6 +501,7 @@ void SendMPDefaultReply()
 	*(u32*)&reply[0xC + 0x18] = 0;
 
 	int txlen = Platform::MP_SendPacket(reply, 12+28);
+	(void)txlen;
 	WIFI_LOG("wifi: sent %d/40 bytes of MP default reply\n", txlen);
 }
 
@@ -531,6 +532,7 @@ void SendMPAck()
 	*(u32*)&ack[0xC + 0x1C] = 0;
 
 	int txlen = Platform::MP_SendPacket(ack, 12+32);
+	(void)txlen;
 	WIFI_LOG("wifi: sent %d/44 bytes of MP ack, %d %d\n", txlen, ComStatus, RXTime);
 }
 
@@ -656,6 +658,7 @@ bool ProcessTX(TXSlot* slot, int num)
 
             // send
             int txlen = Platform::MP_SendPacket(&RAM[slot->Addr], 12 + slot->Length);
+	    (void)txlen;
             WIFI_LOG("wifi: sent %d/%d bytes of slot%d packet, addr=%04X, framectl=%04X, %04X %04X\n",
                      txlen, slot->Length+12, num, slot->Addr, *(u16*)&RAM[slot->Addr + 0xC],
                      *(u16*)&RAM[slot->Addr + 0x24], *(u16*)&RAM[slot->Addr + 0x26]);
@@ -834,7 +837,9 @@ bool CheckRX(bool block)
         framectl = *(u16*)&RXBuffer[12+0];
         txrate = RXBuffer[8];
 
-        u32 a_src, a_dst, a_bss;
+        u32 a_src = 0;
+	u32 a_dst = 0;
+	u32 a_bss = 0;
         rxflags = 0x0010;
         switch (framectl & 0x000C)
         {

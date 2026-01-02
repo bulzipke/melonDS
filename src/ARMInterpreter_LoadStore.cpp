@@ -388,7 +388,7 @@ void A_LDM(ARM* cpu)
 {
     u32 baseid = (cpu->CurInstr >> 16) & 0xF;
     u32 base = cpu->R[baseid];
-    u32 wbbase;
+    u32 wbbase = 0;
     u32 preinc = (cpu->CurInstr & (1<<24));
     bool first = true;
 

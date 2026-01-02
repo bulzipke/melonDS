@@ -33,6 +33,11 @@ extern char __start__;
 
 #include <stdlib.h>
 
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winvalid-offsetof"
+#endif
+
 using namespace Arm64Gen;
 
 extern "C" void ARM_Ret();
@@ -371,9 +376,10 @@ Compiler::Compiler()
             {
                 for (int reg = 0; reg < 32; reg++)
                 {
-                    if (!(reg == W4 || (reg >= W8 && reg <= W15) || (reg >= W19 && reg <= W25)))
+	            ARM64Reg rdMapped = (ARM64Reg)reg;
+                    if (!(rdMapped == W4 || (rdMapped >= W8 && rdMapped <= W15) || (rdMapped >= W19 && rdMapped <= W25)))
                         continue;
-                    ARM64Reg rdMapped = (ARM64Reg)reg;
+
                     PatchedStoreFuncs[consoleType][num][size][reg] = GetRXPtr();
                     if (num == 0)
                     {
@@ -532,7 +538,7 @@ FixupBranch Compiler::CheckCondition(u32 cond)
     }
     else
     {
-        u8 bit = (28 + ((~(cond >> 1) & 1) << 1 | (cond >> 2 & 1) ^ (cond >> 1 & 1)));
+        u8 bit = (28 + ((~(cond >> 1) & 1) << 1 | ((cond >> 2 & 1) ^ (cond >> 1 & 1))));
 
         if (cond & 1)
             return TBNZ(RCPSR, bit);
@@ -851,7 +857,7 @@ void Compiler::Reset()
 
     const u32 brk_0 = 0xD4200000;
 
-    for (int i = 0; i < (JitMemMainSize + JitMemSecondarySize) / 4; i++)
+    for (u32 i = 0; i < (JitMemMainSize + JitMemSecondarySize) / 4; i++)
         *(((u32*)GetRWPtr()) + i) = brk_0;
 }
 
@@ -947,7 +953,7 @@ void Compiler::Comp_AddCycles_CD()
         //if (DataRegion != CodeRegion)
             cycles = std::max(numC + numD - 6, std::max(numC, numD));
 
-        IrregularCycles = cycles != numC;
+        IrregularCycles = cycles != (u32)numC;
     }
     else
     {
@@ -980,3 +986,7 @@ void Compiler::Comp_AddCycles_CD()
 }
 
 }
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif

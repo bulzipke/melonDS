@@ -49,7 +49,7 @@ public:
 
     void UnloadRegister(int reg)
     {
-        assert(Mapping[reg] != -1);
+        assert((int)Mapping[reg] != -1);
 
         if (DirtyRegs & (1 << reg))
             Compiler->SaveReg(reg, Mapping[reg]);
@@ -62,7 +62,7 @@ public:
 
     void LoadRegister(int reg, bool loadValue)
     {
-        assert(Mapping[reg] == -1);
+        assert((int)Mapping[reg] == -1);
         for (int i = 0; i < NativeRegsAvailable; i++)
         {
             Reg nativeReg = NativeRegAllocOrder[i];
