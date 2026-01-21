@@ -185,7 +185,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       "disabled"
    },
 #endif
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
    {
       "melonds_opengl_renderer",
       "OpenGL Renderer (Restart)",
@@ -498,7 +498,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
       },
       "Bottom"
    },
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
    {
       "melonds_hybrid_ratio",
       "Hybrid Ratio (OpenGL Only)",

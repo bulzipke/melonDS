@@ -43,9 +43,11 @@ bool GLCompositor::Init()
     {
         GLint uni_id;
 
+#ifndef OGLRENDERER_GLES
         glBindAttribLocation(CompShader[i][2], 0, "vPosition");
         glBindAttribLocation(CompShader[i][2], 1, "vTexcoord");
         glBindFragDataLocation(CompShader[i][2], 0, "oColor");
+#endif
 
         if (!OpenGL::LinkShaderProgram(CompShader[i]))
             return false;
@@ -106,7 +108,11 @@ bool GLCompositor::Init()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+#ifdef OGLRENDERER_GLES
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 256 * 3 + 1, 192 * 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, 256*3 + 1, 192*2, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, NULL);
+#endif
 
     glGenTextures(2, CompScreenOutputTex);
     for (int i = 0; i < 2; i++)
@@ -160,7 +166,11 @@ void GLCompositor::SetRenderSettings(RenderSettings& settings)
 
         GLenum fbassign[] = {GL_COLOR_ATTACHMENT0};
         glBindFramebuffer(GL_FRAMEBUFFER, CompScreenOutputFB[i]);
+#ifdef OGLRENDERER_GLES
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, CompScreenOutputTex[i], 0);
+#else 
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, CompScreenOutputTex[i], 0);
+#endif 
         glDrawBuffers(1, fbassign);
     }
 
@@ -194,7 +204,9 @@ void GLCompositor::RenderFrame()
 
     glViewport(0, 0, ScreenW, ScreenH);
 
+#ifndef OGLRENDERER_GLES
     glClear(GL_COLOR_BUFFER_BIT);
+#endif 
 
     // TODO: select more shaders (filtering, etc)
     OpenGL::UseShaderProgram(CompShader[0]);
@@ -208,10 +220,17 @@ void GLCompositor::RenderFrame()
 
     if (GPU::Framebuffer[frontbuf][0] && GPU::Framebuffer[frontbuf][1])
     {
+#ifdef OGLRENDERER_GLES
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256*3 + 1, 192, GL_RGBA,
+                        GL_UNSIGNED_BYTE, GPU::Framebuffer[frontbuf][0]);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 192, 256*3 + 1, 192, GL_RGBA,
+                        GL_UNSIGNED_BYTE, GPU::Framebuffer[frontbuf][1]);
+#else
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256*3 + 1, 192, GL_RGBA_INTEGER,
                         GL_UNSIGNED_BYTE, GPU::Framebuffer[frontbuf][0]);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 192, 256*3 + 1, 192, GL_RGBA_INTEGER,
                         GL_UNSIGNED_BYTE, GPU::Framebuffer[frontbuf][1]);
+#endif
     }
 
     glActiveTexture(GL_TEXTURE1);

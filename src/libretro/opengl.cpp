@@ -39,9 +39,11 @@ static bool setup_opengl(void)
    if (!OpenGL::BuildShaderProgram(vertex_shader, fragment_shader, shader, "LibretroShader"))
       return false;
 
+#ifndef OGLRENDERER_GLES
    glBindAttribLocation(shader[2], 0, "vPosition");
    glBindAttribLocation(shader[2], 1, "vTexcoord");
    glBindFragDataLocation(shader[2], 0, "oColor");
+#endif
 
    if (!OpenGL::LinkShaderProgram(shader))
       return false;
@@ -80,7 +82,11 @@ static bool setup_opengl(void)
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+#ifdef OGLRENDERER_GLES
+   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 256*3 + 1, 192*2, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+#else
    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8UI, 256*3 + 1, 192*2, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, NULL);
+#endif
 
    refresh_opengl = true;
 
@@ -171,7 +177,11 @@ void setup_opengl_frame_state(void)
    GL_ShaderConfig.cursorPos[3] = -1.0f;
 
    glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+#ifdef OGLRENDERER_GLES
+   void* unibuf = glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(GL_ShaderConfig), GL_MAP_WRITE_BIT);
+#else
    void* unibuf = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+#endif 
    if (unibuf) memcpy(unibuf, &GL_ShaderConfig, sizeof(GL_ShaderConfig));
    glUnmapBuffer(GL_UNIFORM_BUFFER);
 
@@ -380,10 +390,15 @@ void render_opengl_frame(bool sw)
       GL_ShaderConfig.cursorPos[3] = (((float)(input_state.touch_y) + (float)(CURSOR_SIZE)) / ((float)VIDEO_WIDTH * 1.5)) + 0.5f;
 
       glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+#ifdef OGLRENDERER_GLES
+      void* unibuf = glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(GL_ShaderConfig), GL_MAP_WRITE_BIT);
+#else
       void* unibuf = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+#endif 
       if (unibuf) memcpy(unibuf, &GL_ShaderConfig, sizeof(GL_ShaderConfig));
       glUnmapBuffer(GL_UNIFORM_BUFFER);
    }
+
 
    OpenGL::UseShaderProgram(shader);
 
@@ -401,10 +416,17 @@ void render_opengl_frame(bool sw)
 
       if (GPU::Framebuffer[frontbuf][0] && GPU::Framebuffer[frontbuf][1])
       {
+#ifdef OGLRENDERER_GLES
+         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 192, GL_RGBA,
+                        GL_UNSIGNED_BYTE, GPU::Framebuffer[frontbuf][0]);
+         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 192, 256, 192, GL_RGBA,
+                        GL_UNSIGNED_BYTE, GPU::Framebuffer[frontbuf][1]);
+#else
          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 256, 192, GL_RGBA_INTEGER,
                         GL_UNSIGNED_BYTE, GPU::Framebuffer[frontbuf][0]);
          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 192, 256, 192, GL_RGBA_INTEGER,
                         GL_UNSIGNED_BYTE, GPU::Framebuffer[frontbuf][1]);
+#endif
       }
    }
    else
@@ -420,7 +442,9 @@ void render_opengl_frame(bool sw)
    glBindVertexArray(vao);
    glDrawArrays(GL_TRIANGLES, 0, screen_layout_data.hybrid_small_screen == SmallScreenLayout::SmallScreenDuplicate ? 18 : 12);
 
+#ifndef OGLRENDERER_GLES
    glFlush();
+#endif
 
    glsm_ctl(GLSM_CTL_STATE_UNBIND, NULL);
 

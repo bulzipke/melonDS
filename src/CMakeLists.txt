@@ -68,6 +68,12 @@ if (ENABLE_OGLRENDERER)
 		GPU3D_OpenGL_shaders.h
 		OpenGLSupport.cpp
 	)
+
+	target_compile_definitions(core PUBLIC OGLRENDERER_ENABLED)
+
+	if (ENABLE_GLES)
+		target_compile_definitions(core PUBLIC OGLRENDERER_GLES)
+	endif()
 endif()
 
 if (ENABLE_JIT)
@@ -116,16 +122,24 @@ target_link_libraries(core teakra)
 
 
 if (ENABLE_OGLRENDERER)
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(EPOXY REQUIRED epoxy)
-
-    target_include_directories(core PRIVATE ${EPOXY_INCLUDE_DIRS})
-    if (WIN32)
-        target_link_libraries(core ole32 comctl32 ws2_32 ${EPOXY_LIBRARIES})
-    elseif (APPLE)
-        target_link_libraries(core ${EPOXY_LIBRARIES})
+    if (ENABLE_GLES)
+        if (WIN32)
+            target_link_libraries(core ole32 comctl32 ws2_32 EGL GLESv2)
+        else()
+            target_link_libraries(core rt EGL GLESv2)
+        endif()
     else()
-        target_link_libraries(core rt ${EPOXY_LIBRARIES})
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(EPOXY REQUIRED epoxy)
+
+        target_include_directories(core PRIVATE ${EPOXY_INCLUDE_DIRS})
+        if (WIN32)
+            target_link_libraries(core ole32 comctl32 ws2_32 ${EPOXY_LIBRARIES})
+        elseif (APPLE)
+            target_link_libraries(core ${EPOXY_LIBRARIES})
+        else()
+            target_link_libraries(core rt ${EPOXY_LIBRARIES})
+        endif()
     endif()
 else()
 	if (WIN32)

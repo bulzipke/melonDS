@@ -138,6 +138,8 @@ private:
     GLuint TexMemID;
     GLuint TexPalMemID;
 
+    u16* TexPalTempBuffer = nullptr;
+
     int ScaleFactor;
     bool BetterPolygons;
     int ScreenW, ScreenH;

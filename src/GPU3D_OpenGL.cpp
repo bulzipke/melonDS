@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "NDS.h"
 #include "GPU.h"
 #include "Config.h"
@@ -58,12 +59,14 @@ bool GLRenderer::BuildRenderShader(u32 flags, const char* vs, const char* fs)
 
     GLuint prog = RenderShader[flags][2];
 
+#ifndef OGLRENDERER_GLES
     glBindAttribLocation(prog, 0, "vPosition");
     glBindAttribLocation(prog, 1, "vColor");
     glBindAttribLocation(prog, 2, "vTexcoord");
     glBindAttribLocation(prog, 3, "vPolygonAttr");
     glBindFragDataLocation(prog, 0, "oColor");
     glBindFragDataLocation(prog, 1, "oAttr");
+#endif
 
     if (!OpenGL::LinkShaderProgram(RenderShader[flags]))
         return false;
@@ -109,16 +112,23 @@ bool GLRenderer::Init()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_STENCIL_TEST);
 
+#ifdef OGLRENDERER_GLES
+    glDepthRangef(0.0f, 1.0f);
+    glClearDepthf(1.0f);
+#else
     glDepthRange(0, 1);
     glClearDepth(1.0);
+#endif
 
 
     if (!OpenGL::BuildShaderProgram(kClearVS, kClearFS, ClearShaderPlain, "ClearShader"))
         return false;
 
+#ifndef OGLRENDERER_GLES
     glBindAttribLocation(ClearShaderPlain[2], 0, "vPosition");
     glBindFragDataLocation(ClearShaderPlain[2], 0, "oColor");
     glBindFragDataLocation(ClearShaderPlain[2], 1, "oAttr");
+#endif
 
     if (!OpenGL::LinkShaderProgram(ClearShaderPlain))
         return false;
@@ -153,8 +163,10 @@ bool GLRenderer::Init()
     if (!OpenGL::BuildShaderProgram(kFinalPassVS, kFinalPassFogFS, FinalPassFogShader, "FinalPassFogShader"))
         return false;
 
+#ifndef OGLRENDERER_GLES
     glBindAttribLocation(FinalPassEdgeShader[2], 0, "vPosition");
     glBindFragDataLocation(FinalPassEdgeShader[2], 0, "oColor");
+#endif
 
     if (!OpenGL::LinkShaderProgram(FinalPassEdgeShader))
         return false;
@@ -169,8 +181,10 @@ bool GLRenderer::Init()
     uni_id = glGetUniformLocation(FinalPassEdgeShader[2], "AttrBuffer");
     glUniform1i(uni_id, 1);
 
+#ifndef OGLRENDERER_GLES
     glBindAttribLocation(FinalPassFogShader[2], 0, "vPosition");
     glBindFragDataLocation(FinalPassFogShader[2], 0, "oColor");
+#endif
 
     if (!OpenGL::LinkShaderProgram(FinalPassFogShader))
         return false;
@@ -281,9 +295,19 @@ bool GLRenderer::Init()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+#ifdef OGLRENDERER_GLES
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, 1024, 48, 0, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, NULL);
+    TexPalTempBuffer = (u16*)malloc(1024 * 48 * sizeof(u16));
+#else
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB5_A1, 1024, 48, 0, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV, NULL);
+#endif
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+#ifdef OGLRENDERER_GLES
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+#endif
 
     return true;
 }
@@ -292,6 +316,8 @@ void GLRenderer::DeInit()
 {
     glDeleteTextures(1, &TexMemID);
     glDeleteTextures(1, &TexPalMemID);
+
+    if (TexPalTempBuffer) { free(TexPalTempBuffer); TexPalTempBuffer = nullptr; }
 
     glDeleteFramebuffers(4, &FramebufferID[0]);
     glDeleteTextures(8, &FramebufferTex[0]);
@@ -340,20 +366,36 @@ void GLRenderer::SetRenderSettings(GPU::RenderSettings& settings)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ScreenW, ScreenH, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferID[3]);
+#ifdef OGLRENDERER_GLES
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, FramebufferTex[3], 0);
+#else
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, FramebufferTex[3], 0);
+#endif
 
     GLenum fbassign[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferID[0]);
+#ifdef OGLRENDERER_GLES
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, FramebufferTex[0], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, FramebufferTex[4], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, FramebufferTex[5], 0);
+#else
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, FramebufferTex[0], 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, FramebufferTex[4], 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, FramebufferTex[5], 0);
+#endif
     glDrawBuffers(2, fbassign);
 
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferID[1]);
+#ifdef OGLRENDERER_GLES
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, FramebufferTex[1], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, FramebufferTex[6], 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, FramebufferTex[7], 0);
+#else
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, FramebufferTex[1], 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, FramebufferTex[6], 0);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, FramebufferTex[7], 0);
+#endif
     glDrawBuffers(2, fbassign);
 
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferID[0]);
@@ -506,7 +548,7 @@ void GLRenderer::BuildPolygons(GLRenderer::RendererPolygon* polygons, int npolys
         {
             rp->PrimType = GL_LINES;
 
-            u32 lastx, lasty;
+            s32 lastx =0, lasty = 0;
             int nout = 0;
             for (u32 j = 0; j < poly->NumVertices; j++)
             {
@@ -1170,40 +1212,86 @@ void GLRenderer::RenderFrame()
     ShaderConfig.uFogShift = RenderFogShift;
 
     glBindBuffer(GL_UNIFORM_BUFFER, ShaderConfigUBO);
+#ifdef OGLRENDERER_GLES
+    void* unibuf = glMapBufferRange(GL_UNIFORM_BUFFER, 0, sizeof(ShaderConfig), GL_MAP_WRITE_BIT);
+#else
     void* unibuf = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+#endif
     if (unibuf) memcpy(unibuf, &ShaderConfig, sizeof(ShaderConfig));
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-    // SUCKY!!!!!!!!!!!!!!!!!!
-    // TODO: detect when VRAM blocks are modified!
+    auto textureDirty = GPU::VRAMDirty_Texture.DeriveState(GPU::VRAMMap_Texture);
+    auto texPalDirty = GPU::VRAMDirty_TexPal.DeriveState(GPU::VRAMMap_TexPal);
+
+    bool textureChanged = GPU::MakeVRAMFlat_TextureCoherent(textureDirty);
+    bool texPalChanged = GPU::MakeVRAMFlat_TexPalCoherent(texPalDirty);
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, TexMemID);
-    for (int i = 0; i < 4; i++)
+    if (textureChanged)
     {
-        u32 mask = GPU::VRAMMap_Texture[i];
-        u8* vram;
-        if (!mask) continue;
-        else if (mask & (1<<0)) vram = GPU::VRAM_A;
-        else if (mask & (1<<1)) vram = GPU::VRAM_B;
-        else if (mask & (1<<2)) vram = GPU::VRAM_C;
-        else if (mask & (1<<3)) vram = GPU::VRAM_D;
+        u32 minBit = 0xFFFFFFFF, maxBit = 0;
+        bool any = false;
 
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i*128, 1024, 128, GL_RED_INTEGER, GL_UNSIGNED_BYTE, vram);
+        for (auto it = textureDirty.Begin(); it != textureDirty.End(); ++it)
+        {
+            u32 bit = *it;
+            if (bit < minBit) minBit = bit;
+            if (bit > maxBit) maxBit = bit;
+            any = true;
+        }
+
+        if (any)
+        {
+            u32 startRow = minBit / 2;
+            u32 endRow = maxBit / 2;
+            u32 numRows = (endRow - startRow) + 1;
+
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, startRow, 1024, numRows, GL_RED_INTEGER, GL_UNSIGNED_BYTE, GPU::VRAMFlat_Texture + (size_t)startRow * 1024);
+        }
     }
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, TexPalMemID);
-    for (int i = 0; i < 6; i++)
+    if (texPalChanged)
     {
-        // 6 x 16K chunks
-        u32 mask = GPU::VRAMMap_TexPal[i];
-        u8* vram;
-        if (!mask) continue;
-        else if (mask & (1<<4)) vram = &GPU::VRAM_E[(i&3)*0x4000];
-        else if (mask & (1<<5)) vram = GPU::VRAM_F;
-        else if (mask & (1<<6)) vram = GPU::VRAM_G;
+        const size_t palChunkBytes = 16 * 1024;
+        const u32 palBitsPerChunk = (u32)(palChunkBytes / GPU::VRAMDirtyGranularity);
+        u32 minChunk = 6, maxChunk = 0;
+        bool any = false;
 
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i*8, 1024, 8, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV, vram);
+        for (auto it = texPalDirty.Begin(); it != texPalDirty.End(); ++it) {
+            u32 idx = *it / palBitsPerChunk;
+            if (idx < 6) {
+                if (idx < minChunk) minChunk = idx;
+                if (idx > maxChunk) maxChunk = idx;
+                any = true;
+            }
+        }
+
+        if (any && TexPalTempBuffer) {
+            u32 startRow = minChunk * 8;
+            u32 numChunks = (maxChunk - minChunk) + 1;
+            u32 numRows = numChunks * 8;
+            u8* srcStart = GPU::VRAMFlat_TexPal + (size_t)minChunk * palChunkBytes;
+
+#ifdef OGLRENDERER_GLES
+            memcpy(TexPalTempBuffer, srcStart, numChunks * palChunkBytes);
+            for (u32 j = 0; j < numChunks * 8192; j++) {
+                u16 value = TexPalTempBuffer[j];
+
+                u8 a = (value >> 15) & 0x1;
+                u8 b = (value >> 10) & 0x1F;
+                u8 g = (value >> 5) & 0x1F;
+                u8 r = (value >> 0) & 0x1F;
+
+                TexPalTempBuffer[j] = (r << 11) | (g << 6) | (b << 1) | a;
+            }
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, startRow, 1024, numRows, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, TexPalTempBuffer);
+#else
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, startRow, 1024, numRows, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV, srcStart);
+#endif
+        }
     }
 
     glDisable(GL_SCISSOR_TEST);
@@ -1292,14 +1380,26 @@ void GLRenderer::PrepareCaptureFrame()
     // TODO: make sure this picks the right buffer when doing antialiasing
     int original_fb = FrontBuffer^1;
 
+#ifdef OGLRENDERER_GLES
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, PixelbufferID);
+#endif
     glBindFramebuffer(GL_READ_FRAMEBUFFER, FramebufferID[original_fb]);
     glReadBuffer(GL_COLOR_ATTACHMENT0);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FramebufferID[3]);
+#ifdef OGLRENDERER_GLES
+    GLenum bufferAttachment = GL_COLOR_ATTACHMENT0;
+    glDrawBuffers(1, &bufferAttachment);
+#else
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
+#endif
     glBlitFramebuffer(0, 0, ScreenW, ScreenH, 0, 0, 256, 192, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, FramebufferID[3]);
+#ifdef OGLRENDERER_GLES
+    glReadPixels(0, 0, 256, 192, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+#else
     glReadPixels(0, 0, 256, 192, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+#endif
 }
 
 u32* GLRenderer::GetLine(int line)
@@ -1308,7 +1408,11 @@ u32* GLRenderer::GetLine(int line)
 
     if (line == 0)
     {
+#ifdef OGLRENDERER_GLES
+        u8* data = (u8*)glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, 4 * stride * 192, GL_MAP_READ_BIT);
+#else
         u8* data = (u8*)glMapBuffer(GL_PIXEL_PACK_BUFFER, GL_READ_ONLY);
+#endif
         if (data) memcpy(&Framebuffer[stride*0], data, 4*stride*192);
         glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
     }
@@ -1316,7 +1420,15 @@ u32* GLRenderer::GetLine(int line)
     u64* ptr = (u64*)&Framebuffer[stride * line];
     for (int i = 0; i < stride; i+=2)
     {
+#ifdef OGLRENDERER_GLES
+        // Data is in BGRA format but we need to convert it to RGBA
+        u64 redBits = (*ptr & 0x000000FC000000FC) << 16;
+        u64 blueBits = (*ptr & 0x00FC000000FC0000) >> 16;
+
+        u64 rgb = (*ptr & 0x0000FC000000FC00) | redBits | blueBits;
+#else
         u64 rgb = *ptr & 0x00FCFCFC00FCFCFC;
+#endif
         u64 a = *ptr & 0xF8000000F8000000;
 
         *ptr++ = (rgb >> 2) | (a >> 3);

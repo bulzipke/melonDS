@@ -16,6 +16,64 @@
     with melonDS. If not, see http://www.gnu.org/licenses/.
 */
 
+#ifdef OGLRENDERER_GLES
+const char* vertex_shader = R"(#version 320 es
+precision highp float;
+precision highp int;
+layout(std140) uniform uConfig
+{
+    vec2 uScreenSize;
+    uint u3DScale;
+    uint uFilterMode;
+    vec4 cursorPos;
+};
+layout(location = 0) in vec2 pos;
+layout(location = 1) in vec2 texcoord;
+smooth out vec2 fTexcoord;
+void main()
+{
+    vec4 fpos;
+    fpos.xy = ((pos * 2.0) / uScreenSize) - 1.0;
+    fpos.y *= -1.0;
+    fpos.z = 0.0;
+    fpos.w = 1.0;
+    gl_Position = fpos;
+    fTexcoord = texcoord;
+}
+)";
+
+const char* fragment_shader = R"(#version 320 es
+precision highp float;
+precision highp int;
+layout(std140) uniform uConfig
+{
+    vec2 uScreenSize;
+    uint u3DScale;
+    uint uFilterMode;
+    vec4 cursorPos;
+};
+
+uniform sampler2D ScreenTex;
+
+smooth in vec2 fTexcoord;
+
+layout(location = 0) out vec4 oColor;
+
+void main()
+{
+    vec4 pixel = texture(ScreenTex, fTexcoord);
+
+    // virtual cursor so you can see where you touch
+    if(fTexcoord.y >= 0.5 && fTexcoord.y <= 1.0) {
+        if(cursorPos.x <= fTexcoord.x && cursorPos.y <= fTexcoord.y && cursorPos.z >= fTexcoord.x && cursorPos.w >= fTexcoord.y) {
+            pixel = vec4(1.0 - pixel.r, 1.0 - pixel.g, 1.0 - pixel.b, pixel.a);
+        }
+    }
+
+    oColor = vec4(pixel.bgr, 1.0);
+}
+)";
+#else
 const char* vertex_shader = R"(#version 140
 layout(std140) uniform uConfig
 {
@@ -68,3 +126,4 @@ void main()
     oColor = vec4(pixel.bgr, 1.0);
 }
 )";
+#endif

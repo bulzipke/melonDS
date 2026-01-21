@@ -22,6 +22,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_OPENGLES_3_2
+#include <GLES3/gl32.h>
+#endif
 #include <glsym/glsym.h>
 #include <glsm/glsm.h>
 
@@ -1045,7 +1048,7 @@ void rglBindFragDataLocation(GLuint program, GLuint colorNumber,
 #ifdef GLSM_DEBUG
    log_cb(RETRO_LOG_INFO, "glBindFragDataLocation.\n");
 #endif
-#if !defined(HAVE_OPENGLES2)
+#if defined(HAVE_OPENGL) && !defined(HAVE_OPENGLES)
    glBindFragDataLocation(program, colorNumber, name);
 #endif
 }
@@ -1793,7 +1796,7 @@ void rglClearBufferfv( 	GLenum buffer,
 #ifdef GLSM_DEBUG
    log_cb(RETRO_LOG_INFO, "glClearBufferfv.\n");
 #endif
-#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES) && defined(HAVE_OPENGLES_3)
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES) && defined(HAVE_OPENGLES3)
    glClearBufferfv(buffer, drawBuffer, value);
 #endif
 }
@@ -1819,7 +1822,7 @@ const GLubyte* rglGetStringi(GLenum name, GLuint index)
 #ifdef GLSM_DEBUG
    log_cb(RETRO_LOG_INFO, "glGetString.\n");
 #endif
-#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES) && defined(HAVE_OPENGLES_3)
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES) && defined(HAVE_OPENGLES3)
    return glGetStringi(name, index);
 #else
    return NULL;
@@ -1834,7 +1837,7 @@ void rglClearBufferfi( 	GLenum buffer,
 #ifdef GLSM_DEBUG
    log_cb(RETRO_LOG_INFO, "glClearBufferfi.\n");
 #endif
-#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES) && defined(HAVE_OPENGLES_3)
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES) && defined(HAVE_OPENGLES3)
    glClearBufferfi(buffer, drawBuffer, depth, stencil);
 #endif
 }
@@ -1854,7 +1857,7 @@ void rglRenderbufferStorageMultisample( 	GLenum target,
 #ifdef GLSM_DEBUG
    log_cb(RETRO_LOG_INFO, "glRenderbufferStorageMultisample.\n");
 #endif
-#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES) && defined(HAVE_OPENGLES_3)
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES) && defined(HAVE_OPENGLES3)
    glRenderbufferStorageMultisample(target, samples, internalformat, width, height);
 #endif
 }
@@ -2629,8 +2632,11 @@ void rglDrawBuffer(GLenum buf)
 #ifdef GLSM_DEBUG
    log_cb(RETRO_LOG_INFO, "glDrawBuffer.\n");
 #endif
-#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
+#if defined(HAVE_OPENGL)
    glDrawBuffer(buf);
+#elif defined(HAVE_OPENGLES3)
+   GLenum bufs = buf;
+   glDrawBuffers(1, &bufs);
 #endif
 }
 
@@ -2904,7 +2910,11 @@ static bool glsm_state_ctx_init(glsm_ctx_params_t *params)
       return false;
 
 #ifdef HAVE_OPENGLES
-#if defined(HAVE_OPENGLES_3_1)
+#if defined(HAVE_OPENGLES_3_2)
+   hw_render.context_type       = RETRO_HW_CONTEXT_OPENGLES_VERSION;
+   hw_render.version_major      = 3;
+   hw_render.version_minor      = 2;
+#elif defined(HAVE_OPENGLES_3_1)
    hw_render.context_type       = RETRO_HW_CONTEXT_OPENGLES_VERSION;
    hw_render.version_major      = 3;
    hw_render.version_minor      = 1;

@@ -54,7 +54,7 @@ bool swap_screen_toggled = false;
 const int SLOT_1_2_BOOT = 1;
 
 static bool libretro_supports_option_categories = false;
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
 static bool opengl_options = true;
 #endif
 static bool hybrid_options = true;
@@ -137,7 +137,7 @@ static bool update_option_visibility(void)
    struct retro_variable var;
    bool updated = false;
 
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
    // Show/hide OpenGL core options
    bool opengl_options_prev = opengl_options;
 
@@ -178,7 +178,7 @@ static bool update_option_visibility(void)
       option_display.key = "melonds_hybrid_small_screen";
       environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);
 
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
       option_display.key = "melonds_hybrid_ratio";
       environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);
 #endif
@@ -326,7 +326,7 @@ static void check_variables(bool init)
 {
    struct retro_variable var = {0};
 
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
    bool gl_update = false;
 #endif
 
@@ -376,7 +376,7 @@ static void check_variables(bool init)
         screen_layout_data.screen_gap_unscaled = std::stoi(var.value);
    }
 
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
    var.key = "melonds_hybrid_ratio";
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value != NULL)
    {
@@ -389,7 +389,9 @@ static void check_variables(bool init)
    var.key = "melonds_hybrid_small_screen";
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value != NULL)
    {
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
       SmallScreenLayout old_hybrid_screen_value = screen_layout_data.hybrid_small_screen; // Copy the hybrid screen value
+#endif // HAVE_OPENGL
       if (!strcmp(var.value, "Top"))
          screen_layout_data.hybrid_small_screen  = SmallScreenLayout::SmallScreenTop;
       else if (!strcmp(var.value, "Bottom"))
@@ -397,11 +399,11 @@ static void check_variables(bool init)
       else
          screen_layout_data.hybrid_small_screen  = SmallScreenLayout::SmallScreenDuplicate;
 
-   #ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
       if(old_hybrid_screen_value != screen_layout_data.hybrid_small_screen) {
          gl_update = true;
       }
-   #endif
+#endif
    }
 
    var.key = "melonds_swapscreen_mode";
@@ -443,7 +445,7 @@ static void check_variables(bool init)
          new_touch_mode = TouchMode::Joystick;
    }
 
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
    if(input_state.current_touch_mode != new_touch_mode) // Hide the cursor
       gl_update = true;
 
@@ -636,7 +638,7 @@ static void render_frame(void)
 {
    if (current_renderer == CurrentRenderer::None)
    {
- #ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
          if (enable_opengl && using_opengl)
          {
             // Try to initialize opengl, if it failed fallback to software
@@ -652,11 +654,11 @@ static void render_frame(void)
             if(using_opengl) deinitialize_opengl_renderer();
 #endif
             current_renderer = CurrentRenderer::Software;
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
          }
 #endif
    }
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
    if(using_opengl)
    {
       if (current_renderer == CurrentRenderer::Software) render_opengl_frame(true);
@@ -703,7 +705,7 @@ static void render_frame(void)
 
          video_cb((uint8_t*)screen_layout_data.buffer_ptr, screen_layout_data.buffer_width, screen_layout_data.buffer_height, screen_layout_data.buffer_width * sizeof(uint32_t));
       }
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
    }
 #endif
 }
@@ -876,7 +878,7 @@ static bool _handle_load_game(unsigned type, const struct retro_game_info *info)
    check_variables(true);
 
    // Initialize the opengl state if needed
-#ifdef HAVE_OPENGL
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES3)
    if (enable_opengl)
       initialize_opengl();
 #endif

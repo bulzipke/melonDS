@@ -61,7 +61,7 @@ private:
     CompVertex CompVertices[2 * 3*2];
 
     GLuint CompScreenInputTex;
-    GLuint CompScreenOutputTex[2];
+    GLuint CompScreenOutputTex[2] = {0, 0};
     GLuint CompScreenOutputFB[2];
 };
 

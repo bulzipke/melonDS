@@ -31,9 +31,8 @@
 
 RETRO_BEGIN_DECLS
 
-#ifdef HAVE_OPENGLES2
-typedef double GLdouble;
-typedef double GLclampd;
+#if defined(HAVE_OPENGLES2) || defined(HAVE_OPENGLES3) || defined(HAVE_OPENGLES)
+typedef GLfloat GLclampd;
 #endif
 
 #if defined(HAVE_OPENGLES2)
